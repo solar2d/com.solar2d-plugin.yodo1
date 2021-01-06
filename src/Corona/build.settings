@@ -1,0 +1,21 @@
+settings =
+{
+    android =
+    {
+        applicationChildElements =
+        {
+            [[
+                <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
+                    android:value="ca-app-pub-7188592076082444~1261271317"/>  -- replace with your app id. See: https://goo.gl/fQ2neu
+                <meta-data
+                    android:name="Yodo1ChannelCode"
+                    android:value="GooglePlay"
+                    tools:replace="android:value" />
+            ]],
+        },
+    },
+    plugins = 
+    {
+        ["plugin.yodo1"] = { publisherId = "com.solar2d" },
+    }, 
+}

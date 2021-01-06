@@ -1,0 +1,33 @@
+repositories {
+    maven { url 'https://dl.bintray.com/yodo1/android-sdk' }
+    maven { url 'https://jitpack.io'}
+    maven { url "https://applovin.bintray.com/Android-Adapter-SDKs" }
+    maven { url 'https://dl.bintray.com/ironsource-mobile/android-sdk' }
+    maven { url "https://chartboostmobile.bintray.com/Chartboost" }
+    maven { url "http://dl.appnext.com/" }
+    maven { url "https://fyber.bintray.com/marketplace" }
+    maven { url "https://dl.bintray.com/mintegral-official/mintegral_ad_sdk_android_for_oversea" }
+}
+dependencies {
+    implementation 'com.yodo1:advert-gp:3.13.0'
+}
+android {
+    dexOptions {
+        javaMaxHeapSize "2g"
+        preDexLibraries true
+        maxProcessCount 8
+    }
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+    compileOptions {
+        sourceCompatibility "1.8"
+        targetCompatibility "1.8"
+    }
+    defaultConfig {
+        minSdkVersion Math.max(minSdkVersion?.apiLevel ?: 15, 19)
+    }
+}
+
+ext["minSdkVersion"] = Math.max(ext.find("minSdkVersion")?:15, 19)
