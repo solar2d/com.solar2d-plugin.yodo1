@@ -2,3 +2,4 @@ plugins/*.tgz
 .gradle/
 *.hprof
 data.tgz
+.DS_Store
