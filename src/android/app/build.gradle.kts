@@ -4,7 +4,7 @@ import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Klaxon
 import com.beust.klaxon.Parser
 import com.beust.klaxon.lookup
-import org.apache.commons.io.output.ByteArrayOutputStream
+import java.io.ByteArrayOutputStream
 import org.apache.tools.ant.filters.StringInputStream
 
 plugins {
@@ -17,7 +17,7 @@ val coronaResourcesDir: String? by project
 val coronaDstDir: String? by project
 val coronaTmpDir: String? by project
 val coronaAppFileName: String? by project
-val coronaAppPackage = project.findProperty("coronaAppPackage") as? String ?: "com.mycompany.app"
+val coronaAppPackage = project.findProperty("coronaAppPackage") as? String ?: "com.yodo1.mytestapp"
 val coronaKeystore: String? by project
 val coronaKeystorePassword: String? by project
 val coronaKeyAlias: String? by project
@@ -68,14 +68,14 @@ fun checkCoronaNativeInstallation() {
 }
 
 val buildToolsDir = "$projectDir/buildTools".takeIf { file(it).exists() }
-        ?: "$projectDir/../template".takeIf { file(it).exists() } ?: {
+        ?: "$projectDir/../template".takeIf { file(it).exists() } ?: run {
             checkCoronaNativeInstallation()
             copy {
                 from(zipTree("$nativeDir/Corona/android/resource/android-template.zip"))
                 into("$buildDir/intermediates/corona-build-tools")
             }
             "$buildDir/intermediates/corona-build-tools/template/app/buildTools"
-        }()
+        }
 
 val generatedPluginsOutput = "$buildDir/generated/corona_plugins"
 val generatedPluginAssetsDir = "$generatedPluginsOutput/assets"
@@ -799,7 +799,7 @@ tasks.register<Copy>("exportToNativeAppTemplate") {
     from(rootDir) {
         include("app/build.gradle.kts")
         filter {
-            it.replace("com.mycompany.app", "com.mycompany.app")
+            it.replace("com.yodo1.mytestapp", "com.yodo1.mytestapp")
         }
     }
 

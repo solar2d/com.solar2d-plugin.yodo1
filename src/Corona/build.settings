@@ -6,12 +6,16 @@ settings =
         {
             [[
                 <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
-                    android:value="ca-app-pub-7188592076082444~1261271317"/>  -- replace with your app id. See: https://goo.gl/fQ2neu
-                <meta-data
-                    android:name="Yodo1ChannelCode"
-                    android:value="GooglePlay"
-                    tools:replace="android:value" />
+                    android:value="ca-app-pub-5333220833779174~3946742739"/>  -- replace with your app id. See: https://goo.gl/fQ2neu
             ]],
+        },
+    },
+    iphone =
+    {
+        xcassets = "Images.xcassets",
+        plist =
+        {
+            UILaunchStoryboardName = "LaunchScreen",
         },
     },
     plugins = 

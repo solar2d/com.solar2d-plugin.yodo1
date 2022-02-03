@@ -3,7 +3,6 @@ local json = require "json"
 local logText
 local cnt = 1
 
-
 local yodo1 = require "plugin.yodo1"
 
 local curY = 30
@@ -31,7 +30,7 @@ local function log(t)
 	cnt = cnt + 1
 end
 
-local function addButtonLR(label, fnc)
+local function addButtonLogReturnvalue(label, fnc)
 	addButton(label, function()
 		log( fnc() )
 	end)
@@ -41,23 +40,55 @@ local function listener(event)
 	log(tostring(event.type) .. ": " .. tostring(event.phase) .. ": " .. tostring(event.isError and event.errorType))
 end
 
-yodo1.init(listener, {
-    appKey = "MVWzsjaJDO9",
-    debug = true,
-    userConsent = true, -- GDPR consent https://support.yodo1.com/hc/en-us/articles/360051531234
-    doNotSell = false, -- CCPA consent https://support.yodo1.com/hc/en-us/articles/360052314493
-    tagForUnderAgeOfConsent = false, -- COPPA consent https://support.yodo1.com/hc/en-us/articles/360051535114
-})
+--[[
+    Yodo1 MAS plugin 4.4.5
 
+    appKey = "your_appKey" (required)
+        Must match the appKey for this app in your Yodo1 account
+
+    ccpaConsent = false
+        If the user chooses to opt in to targeted advertising
+        See https://developers.yodo1.com/knowledge-base/faq/
+
+    gdprConsent = false
+        If the user chooses to opt in to targeted advertising and tracking
+        See https://developers.yodo1.com/knowledge-base/faq/
+
+    coppaConsent = false
+        Only set true if this app is targeted ONLY to children under 13
+        See https://developers.yodo1.com/knowledge-base/coppa-compliance/
+
+    adaptiveBannerEnabled = true
+        Enable adaptive banner ads. May not be available on all platforms
+        or devices. If enabled ensure adaptive ads are enabled for this appKey.
+        See https://developers.yodo1.com/knowledge-base/ad-units/#Banner
+
+    privacyDialogEnabled = true
+        Enables the Yodo1 privacy dialog box, asking the user for their age.
+
+    userAgreementUrl = ""
+        If you enable the Yodo1 privacy dialog, you can supply your own user agreement URL
+
+    privacyPolicyUrl = ""
+        If you enable the Yodo1 privacy dialog, you can supply your own privacy policy URL
+
+]]--
+yodo1.init(listener, {
+    appKey = "Ht0csvqMQnH",
+    gdprConsent = false,
+    ccpaConsent = false,
+    coppaConsent = false,
+    adaptiveBannerEnabled = true,
+    privacyDialogEnabled = true
+})
 
 
 addButton("showBanner", yodo1.showBanner)
 addButton("showInterstitial", yodo1.showInterstitial)
 addButton("showRewardedVideo", yodo1.showRewardedVideo)
-addButtonLR("hideBanner", yodo1.hideBanner)
-addButtonLR("isBannerLoaded", yodo1.isBannerLoaded)
-addButtonLR("isRewardedVideoLoaded", yodo1.isRewardedVideoLoaded)
-addButtonLR("isInterstitialLoaded", yodo1.isInterstitialLoaded)
+addButtonLogReturnvalue("hideBanner", yodo1.hideBanner)
+addButtonLogReturnvalue("isRewardedVideoLoaded", yodo1.isRewardedVideoLoaded)
+addButtonLogReturnvalue("isInterstitialLoaded", yodo1.isInterstitialLoaded)
 addButton("banner align: left top", function()
 	yodo1.setBannerAlign( "left", "top")
 end)

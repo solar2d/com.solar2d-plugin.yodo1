@@ -8,6 +8,7 @@ local metadata =
             permissions = {},
             usesPermissions =
             {
+                "android.permission.ACCESS_NETWORK_STATE",
                 "android.permission.INTERNET",
             },
             usesFeatures = 
