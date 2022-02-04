@@ -1,6 +1,7 @@
 package plugin.yodo1;
 
 import android.util.Log;
+import androidx.annotation.NonNull;
 
 import com.ansca.corona.CoronaActivity;
 import com.ansca.corona.CoronaEnvironment;
@@ -12,17 +13,18 @@ import com.naef.jnlua.JavaFunction;
 import com.naef.jnlua.LuaState;
 import com.naef.jnlua.LuaType;
 import com.naef.jnlua.NamedJavaFunction;
-import com.yodo1.advert.banner.Yodo1BannerAlign;
-import com.yodo1.advert.callback.BannerCallback;
-import com.yodo1.advert.callback.InterstitialCallback;
-import com.yodo1.advert.callback.VideoCallback;
-import com.yodo1.advert.entity.AdErrorCode;
-import com.yodo1.advert.open.Yodo1Advert;
+
+import com.yodo1.mas.Yodo1Mas;
+import com.yodo1.mas.error.Yodo1MasError;
+import com.yodo1.mas.event.Yodo1MasAdEvent;
+import com.yodo1.mas.helper.Yodo1MasHelper;
+import com.yodo1.mas.helper.model.Yodo1MasAdBuildConfig;
 
 @SuppressWarnings({"unused", "RedundantSuppression"})
 public class LuaLoader implements JavaFunction {
     private int fListener = CoronaLua.REFNIL;
     private static final String EVENT_NAME = "yodo1";
+    private static int bannerAlign = 0;
 
     @Override
     public int invoke(LuaState L) {
@@ -33,7 +35,6 @@ public class LuaLoader implements JavaFunction {
                 new SetBannerAlign(),
                 new ShowInterstitial(),
                 new ShowRewardedVideo(),
-                new IsBannerLoaded(),
                 new IsInterstitialLoaded(),
                 new IsRewardedVideoLoaded(),
         };
@@ -79,6 +80,51 @@ public class LuaLoader implements JavaFunction {
         });
     }
 
+    private final Yodo1Mas.BannerListener bannerListener = new Yodo1Mas.BannerListener() {
+        @Override
+        public void onAdOpened(@NonNull Yodo1MasAdEvent event) {
+            dispatchEvent("banner", "opened");
+        }
+        @Override
+        public void onAdClosed(@NonNull Yodo1MasAdEvent event) {
+            dispatchEvent("banner", "closed");
+        }
+        @Override
+        public void onAdError(@NonNull Yodo1MasAdEvent event, @NonNull Yodo1MasError error) {
+            dispatchEvent("banner", "error", error.toString());
+        }
+    };
+
+    private final Yodo1Mas.RewardListener rewardListener = new Yodo1Mas.RewardListener() {
+        @Override
+        public void onAdOpened(@NonNull Yodo1MasAdEvent event) {
+            dispatchEvent("reward", "opened");
+        }
+        @Override
+        public void onAdvertRewardEarned(@NonNull Yodo1MasAdEvent event) {
+            dispatchEvent("reward", "earned");
+        }
+        @Override
+        public void onAdError(@NonNull Yodo1MasAdEvent event, @NonNull Yodo1MasError error) {
+            dispatchEvent("reward", "error", error.toString());
+        }
+    };
+
+    private final Yodo1Mas.InterstitialListener interstitialListener = new Yodo1Mas.InterstitialListener() {
+        @Override
+        public void onAdOpened(@NonNull Yodo1MasAdEvent event) {
+            dispatchEvent("interstitial", "opened");
+        }
+        @Override
+        public void onAdClosed(@NonNull Yodo1MasAdEvent event) {
+            dispatchEvent("interstitial", "closed");
+        }
+        @Override
+        public void onAdError(@NonNull Yodo1MasAdEvent event, @NonNull Yodo1MasError error) {
+            dispatchEvent("interstitial", "error", error.toString());
+        }
+    };
+
     protected class Init implements NamedJavaFunction {
         @Override
         public String getName() {
@@ -87,13 +133,22 @@ public class LuaLoader implements JavaFunction {
 
         @Override
         public int invoke(LuaState L) {
+            boolean gdprConsent = false;
+            boolean ccpaConsent = false;
+            boolean coppaConsent = false;
+            boolean adaptiveBannerEnabled = false;
+            boolean privacyDialogEnabled = true;
+            String userAgreementUrl = null;
+            String privacyPolicyUrl = null;
+            final String appKey;
+
             final CoronaActivity activity = CoronaEnvironment.getCoronaActivity();
             if (activity == null) {
                 return 0;
             }
 
             if (!L.isTable(2)) {
-                Log.e("Corona", "yodo1.init(parameters), parameters is missing");
+                Log.e("Corona", "yodo1.init(listener, {parameters}) : parameters table is missing");
                 return 0;
             }
 
@@ -101,48 +156,95 @@ public class LuaLoader implements JavaFunction {
                 fListener = CoronaLua.newRef(L, 1);
             }
 
-            final String sdkCode;
             L.getField(2, "appKey");
             if (L.isString(-1)) {
-                sdkCode = L.toString(-1);
+                appKey = L.toString(-1);
             } else {
-                sdkCode = null;
+                appKey = null;
             }
             L.pop(1);
-            if (sdkCode == null) {
-                Log.e("Corona", "yodo1.init(listener, key), key is not a string");
+            if (appKey == null) {
+                Log.e("Corona", "yodo1.init() : appKey parameter is not a string");
                 return 0;
             }
 
-            L.getField(2, "userConsent");
+            L.getField(2, "gdprConsent");
             if (L.type(-1) == LuaType.BOOLEAN) {
-                Yodo1Advert.setUserConsent(L.toBoolean(-1));
+                gdprConsent = L.toBoolean(-1);
             }
             L.pop(1);
 
-            L.getField(2, "doNotSell");
+            L.getField(2, "ccpaConsent");
             if (L.type(-1) == LuaType.BOOLEAN) {
-                Yodo1Advert.setDoNotSell(L.toBoolean(-1));
+                ccpaConsent = L.toBoolean(-1);
             }
             L.pop(1);
 
-            L.getField(2, "tagForUnderAgeOfConsent");
+            L.getField(2, "coppaConsent");
             if (L.type(-1) == LuaType.BOOLEAN) {
-                Yodo1Advert.setTagForUnderAgeOfConsent(L.toBoolean(-1));
+                coppaConsent = L.toBoolean(-1);
             }
             L.pop(1);
 
-            L.getField(2, "debug");
-            if (L.toBoolean(-1)) {
-                Yodo1Advert.setOnLog(true);
+            L.getField(2, "adaptiveBannerEnabled");
+            if (L.type(-1) == LuaType.BOOLEAN) {
+                adaptiveBannerEnabled = L.toBoolean(-1);
             }
             L.pop(1);
+
+            L.getField(2, "privacyDialogEnabled");
+            if (L.type(-1) == LuaType.BOOLEAN) {
+                privacyDialogEnabled = L.toBoolean(-1);
+            }
+            L.pop(1);
+
+            L.getField(2, "userAgreementUrl");
+            if (L.isString(-1)) {
+                userAgreementUrl = L.toString(-1);
+            }
+            L.pop(1);
+
+            L.getField(2, "privacyPolicyUrl");
+            if (L.isString(-1)) {
+                privacyPolicyUrl = L.toString(-1);
+            }
+            L.pop(1);
+
+            Yodo1MasAdBuildConfig.Builder builder = new Yodo1MasAdBuildConfig.Builder()
+                    .enableAdaptiveBanner(adaptiveBannerEnabled)
+                    .enableUserPrivacyDialog(privacyDialogEnabled);
+            if (userAgreementUrl != null) {
+                builder.userAgreementUrl(userAgreementUrl);
+            }
+            if (privacyPolicyUrl != null) {
+                builder.privacyPolicyUrl(privacyPolicyUrl);
+            }
+            Yodo1MasAdBuildConfig config = builder.build();
+            Yodo1Mas.getInstance().setAdBuildConfig(config);
+            Yodo1Mas.getInstance().setCOPPA(coppaConsent);
+            Yodo1Mas.getInstance().setGDPR(gdprConsent);
+            Yodo1Mas.getInstance().setCCPA(ccpaConsent);
 
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Yodo1Advert.initSDK(activity, sdkCode);
-                    dispatchEvent("init", "init");
+                    Yodo1Mas.getInstance().init(activity, appKey, new Yodo1Mas.InitListener() {
+                        @Override
+                        public void onMasInitSuccessful() {
+                            Log.i("Corona", "yodo1.init() success");
+                            dispatchEvent("init", "success");
+                        }
+
+                        @Override
+                        public void onMasInitFailed(@NonNull Yodo1MasError error) {
+                            Log.e("Corona", "yoda1 error: " + error.getMessage());
+                            dispatchEvent("init", "error");
+                        }
+                    });
+
+                    Yodo1Mas.getInstance().setRewardListener(rewardListener);
+                    Yodo1Mas.getInstance().setInterstitialListener(interstitialListener);
+                    Yodo1Mas.getInstance().setBannerListener(bannerListener);
                 }
             });
 
@@ -169,38 +271,32 @@ public class LuaLoader implements JavaFunction {
                 if (L.isString(i)) {
                     switch (L.toString(i)) {
                         case "left":
-                            align |= Yodo1BannerAlign.BannerAlignLeft;
+                            align |= Yodo1Mas.BannerLeft;
                             break;
                         case "horizontalCenter":
-                            align |= Yodo1BannerAlign.BannerAlignHorizontalCenter;
+                            align |= Yodo1Mas.BannerHorizontalCenter;
                             break;
                         case "right":
-                            align |= Yodo1BannerAlign.BannerAlignRight;
+                            align |= Yodo1Mas.BannerRight;
                             break;
                         case "top":
-                            align |= Yodo1BannerAlign.BannerAlignTop;
+                            align |= Yodo1Mas.BannerTop;
                             break;
                         case "verticalCenter":
-                            align |= Yodo1BannerAlign.BannerAlignVerticalCenter;
+                            align |= Yodo1Mas.BannerVerticalCenter;
                             break;
                         case "bottom":
-                            align |= Yodo1BannerAlign.BannerAlignBottom;
+                            align |= Yodo1Mas.BannerBottom;
                             break;
                     }
                 }
             }
-            final int finalAlign = align;
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Yodo1Advert.setBannerAlign(activity, finalAlign);
-                }
-            });
+            bannerAlign = align;
             return 0;
         }
     }
 
-    protected class ShowBanner implements NamedJavaFunction {
+    protected static class ShowBanner implements NamedJavaFunction {
         @Override
         public String getName() {
             return "showBanner";
@@ -216,27 +312,7 @@ public class LuaLoader implements JavaFunction {
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Yodo1Advert.showBanner(activity, new BannerCallback() {
-                        @Override
-                        public void onBannerClosed() {
-                            dispatchEvent("banner", "closed");
-                        }
-
-                        @Override
-                        public void onBannerShow() {
-                            dispatchEvent("banner", "displayed");
-                        }
-
-                        @Override
-                        public void onBannerShowFailed(AdErrorCode errorCode) {
-                            dispatchEvent("banner", "failed", errorCode.name());
-                        }
-
-                        @Override
-                        public void onBannerClicked() {
-                            dispatchEvent("banner", "clicked");
-                        }
-                    });
+                    Yodo1Mas.getInstance().showBannerAd(activity);
                 }
             });
             return 0;
@@ -258,27 +334,7 @@ public class LuaLoader implements JavaFunction {
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Yodo1Advert.showInterstitial(activity, new InterstitialCallback() {
-                        @Override
-                        public void onInterstitialClosed() {
-                            dispatchEvent("interstitial", "closed");
-                        }
-
-                        @Override
-                        public void onInterstitialShowSucceeded() {
-                            dispatchEvent("interstitial", "displayed");
-                        }
-
-                        @Override
-                        public void onInterstitialShowFailed(AdErrorCode adErrorCode) {
-                            dispatchEvent("interstitial", "failed", adErrorCode.name());
-                        }
-
-                        @Override
-                        public void onInterstitialClicked() {
-                            dispatchEvent("interstitial", "clicked");
-                        }
-                    });
+                    Yodo1Mas.getInstance().showInterstitialAd(activity);
                 }
             });
 
@@ -302,30 +358,7 @@ public class LuaLoader implements JavaFunction {
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Yodo1Advert.showVideo(activity, new VideoCallback() {
-                        @Override
-                        public void onVideoClosed(boolean isFinished) {
-                            dispatchEvent("rewardedVideo", "closed");
-                            if (isFinished) {
-                                dispatchEvent("rewardedVideo", "reward");
-                            }
-                        }
-
-                        @Override
-                        public void onVideoShow() {
-                            dispatchEvent("rewardedVideo", "displayed");
-                        }
-
-                        @Override
-                        public void onVideoShowFailed(AdErrorCode errorCode) {
-                            dispatchEvent("rewardedVideo", "failed", errorCode.name());
-                        }
-
-                        @Override
-                        public void onVideoClicked() {
-                            dispatchEvent("rewardedVideo", "clicked");
-                        }
-                    });
+                    Yodo1Mas.getInstance().showRewardedAd(activity);
                 }
             });
             return 0;
@@ -346,27 +379,10 @@ public class LuaLoader implements JavaFunction {
             }
             activity.runOnUiThread(new Runnable() {
                 public void run() {
-                    Yodo1Advert.hideBanner(activity);
+                    Yodo1Mas.getInstance().dismissBannerAd();
                 }
             });
             return 0;
-        }
-    }
-
-    protected static class IsBannerLoaded implements NamedJavaFunction {
-        @Override
-        public String getName() {
-            return "isBannerLoaded";
-        }
-
-        @Override
-        public int invoke(LuaState L) {
-            final CoronaActivity activity = CoronaEnvironment.getCoronaActivity();
-            if (activity == null) {
-                return 0;
-            }
-            L.pushBoolean(Yodo1Advert.bannerIsReady(activity));
-            return 1;
         }
     }
 
@@ -382,7 +398,7 @@ public class LuaLoader implements JavaFunction {
             if (activity == null) {
                 return 0;
             }
-            L.pushBoolean(Yodo1Advert.videoIsReady(activity));
+            L.pushBoolean(Yodo1Mas.getInstance().isRewardedAdLoaded());
             return 1;
         }
     }
@@ -399,7 +415,7 @@ public class LuaLoader implements JavaFunction {
             if (activity == null) {
                 return 0;
             }
-            L.pushBoolean(Yodo1Advert.interstitialIsReady(activity));
+            L.pushBoolean(Yodo1Mas.getInstance().isInterstitialAdLoaded());
             return 1;
         }
     }

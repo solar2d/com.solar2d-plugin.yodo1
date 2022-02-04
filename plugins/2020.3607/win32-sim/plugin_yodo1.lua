@@ -3,56 +3,46 @@
 local Library = require "CoronaLibrary"
 
 -- Create library
-local lib = Library:new{ name="plugin.yodo1", publisherId="com.solar2d", version=1 }
+local lib = Library:new{ name="plugin.yodo1", publisherId="com.solar2d", version=2 }
 
 -------------------------------------------------------------------------------
 -- BEGIN
 -------------------------------------------------------------------------------
 
--- This sample implements the following Lua:
--- 
---    local admob = require "plugin.admob"
---    admob.init()
---    
-
 local function showWarning(functionName)
-    print( functionName .. " WARNING: The AdMob plugin is only supported on Android & iOS devices. Please build for device")
+    print( functionName .. " WARNING: The Yodo1 plugin is only supported on Android & iOS devices. Please build for device")
 end
 
 function lib.init()
-    showWarning("admob.init()")
+    showWarning("yodo1.init()")
 end
 
 function lib.showBanner()
-    showWarning("admob.showBanner()")
+    showWarning("yodo1.showBanner()")
 end
 
 function lib.showInterstitial()
-    showWarning("admob.showInterstitial()")
+    showWarning("yodo1.showInterstitial()")
 end
 
 function lib.showRewardedVideo()
-    showWarning("admob.showRewardedVideo()")
+    showWarning("yodo1.showRewardedVideo()")
 end
 
 function lib.hideBanner()
-    showWarning("admob.hideBanner()")
-end
-
-function lib.isBannerLoaded()
-    showWarning("admob.isBannerLoaded()")
+    showWarning("yodo1.hideBanner()")
 end
 
 function lib.isRewardedVideoLoaded()
-    showWarning("admob.isRewardedVideoLoaded()")
+    showWarning("yodo1.isRewardedVideoLoaded()")
 end
 
 function lib.isInterstitialLoaded()
-    showWarning("admob.isInterstitialLoaded()")
+    showWarning("yodo1.isInterstitialLoaded()")
 end
 
 function lib.setBannerAlign()
-    showWarning("admob.setBannerAlign()")
+    showWarning("yodo1.setBannerAlign()")
 end
 
 -------------------------------------------------------------------------------

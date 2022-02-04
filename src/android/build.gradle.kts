@@ -14,14 +14,12 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven( url = "https://dl.bintray.com/yodo1/android-sdk")
-        maven( url = "https://jitpack.io")
-        maven( url = "https://applovin.bintray.com/Android-Adapter-SDKs")
-        maven( url = "https://dl.bintray.com/ironsource-mobile/android-sdk")
-//        maven( url = "https://chartboostmobile.bintray.com/Chartboost")
-        maven( url = "http://dl.appnext.com/")
-        maven( url = "https://fyber.bintray.com/marketplace")
-        maven( url = "https://dl.bintray.com/mintegral-official/mintegral_ad_sdk_android_for_oversea")
+        mavenCentral()
+
+        maven( url = "https://artifact.bytedance.com/repository/pangle" )
+        maven( url = "https://android-sdk.is.com" )
+        maven( url = "https://sdk.tapjoy.com/" )
+
         val nativeDir = if (System.getProperty("os.name").toLowerCase().contains("windows")) {
             System.getenv("CORONA_ROOT")
         } else {
