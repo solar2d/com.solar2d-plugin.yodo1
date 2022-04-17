@@ -4,6 +4,9 @@ Version 4 of the Yodo1 API is not backwards compatible with version 3. If you us
 
 Yodo1 support site: https://support.yodo1.com
 
+Note: MAS API version 4.6.0 added Native Ads, however this plugin does not yet support them.  See: https://developers.yodo1.com/knowledge-base/android-native-ads-integration/
+
+
 ## Setup `build.settings`
 
 
@@ -62,6 +65,8 @@ settings =
         If you enable the Yodo1 privacy dialog, you can supply your own privacy policy URL
 ```
 
+## Sample app code
+
 ```lua
 local yodo1 = require 'plugin.yodo1'
 
@@ -93,8 +98,8 @@ yodo1.isInterstitialLoaded() -- returns boolean
 
 ### Event `yodo1`
 
-| Function                | Type                | Phases                             |
-| ----------------------- | ------------------- | -----------------------------------|
+| Function                | Type              | Phases                               |
+| ----------------------- | ----------------- | -------------------------------------|
 | `init()`                | `init`            | `success`,`error`                    |
 | `showBanner()`          | `banner`          | `opened`, `closed`, `error`          |
 | `showInterstitial()`    | `interstitial`    | `opened`, `closed`, `error`          |
