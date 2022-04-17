@@ -13,6 +13,6 @@ android {
 
 dependencies {
     implementation ':Corona@aar'
-    implementation("com.yodo1.mas:full:4.4.5")
+    implementation("com.yodo1.mas:full:4.6.5")
     implementation("commons-io:commons-io:2.11.0")
 }

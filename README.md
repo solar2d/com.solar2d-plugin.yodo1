@@ -30,7 +30,7 @@ settings =
 ## Docs
 
 ```
-    Yodo1 MAS plugin 4.4.5
+    Yodo1 MAS plugin 4.6.5
 
     appKey = "your_appKey" (required)
         Must match the appKey for this app in your Yodo1 account
@@ -93,11 +93,25 @@ yodo1.isInterstitialLoaded() -- returns boolean
 
 ### Event `yodo1`
 
-| Function                | Type                | Phases                                  |
-| ----------------------- | ------------------- | --------------------------------------- |
-| `init()`                | `"init"`            | `"success"`,`"error"`                   |
-| `showBanner()`          | `"banner"`          | `"opened"`, `"closed"`, `"error"`       |
-| `showInterstitial()`    | `"interstitial"`    | `"opened"`, `"closed"`, `"error"`       |
-| `showRewardedVideo()`   | `"reward"`          | `"opened"`, `"earned"`, `"error"`       |
+| Function                | Type                | Phases                             |
+| ----------------------- | ------------------- | -----------------------------------|
+| `init()`                | `init`            | `success`,`error`                    |
+| `showBanner()`          | `banner`          | `opened`, `closed`, `error`          |
+| `showInterstitial()`    | `interstitial`    | `opened`, `closed`, `error`          |
+| `showRewardedVideo()`   | `reward`          | `opened`, `closed`, `error`,`earned` |
 
 Events with phase `"error"` have `isError` set to `true` and `errorType` to the error string.
+
+
+## Updating this plugin
+
+To future maintainers of this plugin:
+
+* update the version of Yodo1MAS API in these files:
+  * `README.md`
+  * `plugins/2020.3607/android/corona.gradle`
+  * `src/Corona/main.lua`
+  * `src/android/plugin/build.gradle`
+* make code changes in `src/android/plugin/src/main/java/plugin/yodo1/LuaLoader.java` to support the updated API
+* after making code changes, run `gradle assemble` and then manually copy the compiled AAR into the plugin directory:
+  * `cp src/android/plugin/build/outputs/aar/plugin-release.aar plugins/2020.3607/android/yodo1.aar`
