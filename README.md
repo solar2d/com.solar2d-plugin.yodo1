@@ -4,6 +4,9 @@ Version 4 of the Yodo1 API is not backwards compatible with version 3. If you us
 
 Yodo1 support site: https://support.yodo1.com
 
+Note: MAS API version 4.6.0 added Native Ads, however this plugin does not yet support them.  See: https://developers.yodo1.com/knowledge-base/android-native-ads-integration/
+
+
 ## Setup `build.settings`
 
 
@@ -30,7 +33,7 @@ settings =
 ## Docs
 
 ```
-    Yodo1 MAS plugin 4.4.5
+    Yodo1 MAS plugin 4.6.5
 
     appKey = "your_appKey" (required)
         Must match the appKey for this app in your Yodo1 account
@@ -61,6 +64,8 @@ settings =
     privacyPolicyUrl = ""
         If you enable the Yodo1 privacy dialog, you can supply your own privacy policy URL
 ```
+
+## Sample app code
 
 ```lua
 local yodo1 = require 'plugin.yodo1'
@@ -93,11 +98,25 @@ yodo1.isInterstitialLoaded() -- returns boolean
 
 ### Event `yodo1`
 
-| Function                | Type                | Phases                                  |
-| ----------------------- | ------------------- | --------------------------------------- |
-| `init()`                | `"init"`            | `"success"`,`"error"`                   |
-| `showBanner()`          | `"banner"`          | `"opened"`, `"closed"`, `"error"`       |
-| `showInterstitial()`    | `"interstitial"`    | `"opened"`, `"closed"`, `"error"`       |
-| `showRewardedVideo()`   | `"reward"`          | `"opened"`, `"earned"`, `"error"`       |
+| Function                | Type              | Phases                               |
+| ----------------------- | ----------------- | -------------------------------------|
+| `init()`                | `init`            | `success`,`error`                    |
+| `showBanner()`          | `banner`          | `opened`, `closed`, `error`          |
+| `showInterstitial()`    | `interstitial`    | `opened`, `closed`, `error`          |
+| `showRewardedVideo()`   | `reward`          | `opened`, `closed`, `error`,`earned` |
 
 Events with phase `"error"` have `isError` set to `true` and `errorType` to the error string.
+
+
+## Updating this plugin
+
+To future maintainers of this plugin:
+
+* update the version of Yodo1MAS API in these files:
+  * `README.md`
+  * `plugins/2020.3607/android/corona.gradle`
+  * `src/Corona/main.lua`
+  * `src/android/plugin/build.gradle`
+* make code changes in `src/android/plugin/src/main/java/plugin/yodo1/LuaLoader.java` to support the updated API
+* after making code changes, run `gradle assemble` and then manually copy the compiled AAR into the plugin directory:
+  * `cp src/android/plugin/build/outputs/aar/plugin-release.aar plugins/2020.3607/android/yodo1.aar`

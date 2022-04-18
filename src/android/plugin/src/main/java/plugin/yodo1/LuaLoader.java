@@ -108,6 +108,10 @@ public class LuaLoader implements JavaFunction {
         public void onAdError(@NonNull Yodo1MasAdEvent event, @NonNull Yodo1MasError error) {
             dispatchEvent("reward", "error", error.toString());
         }
+        @Override
+        public void onAdClosed(@NonNull Yodo1MasAdEvent event) {
+            dispatchEvent("reward", "closed");
+        }
     };
 
     private final Yodo1Mas.InterstitialListener interstitialListener = new Yodo1Mas.InterstitialListener() {
