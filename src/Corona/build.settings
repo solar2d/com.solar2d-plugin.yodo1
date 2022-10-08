@@ -2,6 +2,7 @@ settings =
 {
     android =
     {
+	minSdkVersion = "21",
         applicationChildElements =
         {
             [[

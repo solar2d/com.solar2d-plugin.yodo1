@@ -14,7 +14,7 @@ repositories {
 
 }
 dependencies {
-    implementation 'com.yodo1.mas:full:4.6.5'
+    implementation 'com.yodo1.mas:full:4.7.7'
 }
 android {
     dexOptions {
@@ -31,8 +31,8 @@ android {
         targetCompatibility "1.9"
     }
     defaultConfig {
-        minSdkVersion Math.max(minSdkVersion?.apiLevel ?: 19, 29)
+        minSdkVersion Math.max(minSdkVersion?.apiLevel ?: 21, 29)
     }
 }
 
-ext["minSdkVersion"] = Math.max(ext.find("minSdkVersion")?:19, 29)
+ext["minSdkVersion"] = Math.max(ext.find("minSdkVersion")?:21, 29)
