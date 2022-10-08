@@ -33,7 +33,7 @@ settings =
 ## Docs
 
 ```
-    Yodo1 MAS plugin 4.6.5
+    Yodo1 MAS plugin 4.7.7
 
     appKey = "your_appKey" (required)
         Must match the appKey for this app in your Yodo1 account
