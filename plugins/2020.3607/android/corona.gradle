@@ -8,13 +8,17 @@ repositories {
     //maven { url "https://fyber.bintray.com/marketplace" }
     //maven { url "https://dl.bintray.com/mintegral-official/mintegral_ad_sdk_android_for_oversea" }
 
-    maven{ url "https://artifact.bytedance.com/repository/pangle" }
-    maven{ url "https://android-sdk.is.com" }
-    maven{ url "https://sdk.tapjoy.com/" }
+   maven { url "https://artifact.bytedance.com/repository/pangle" }
+   maven { url "https://android-sdk.is.com" }
+   maven { url "https://dl-maven-android.mintegral.com/repository/mbridge_android_sdk_oversea" }
+   maven { url "https://artifactory.bidmachine.io/bidmachine" }
+   maven { url "https://ysonetwork.s3.eu-west-3.amazonaws.com/sdk/android" }
+   maven { url "https://repo.pubmatic.com/artifactory/public-repos" }
+   maven { url "https://cboost.jfrog.io/artifactory/chartboost-ads/" }
 
 }
 dependencies {
-    implementation 'com.yodo1.mas:full:4.7.7'
+    implementation 'com.yodo1.mas:full:4.17.1'
 }
 android {
     dexOptions {
@@ -31,8 +35,8 @@ android {
         targetCompatibility "1.9"
     }
     defaultConfig {
-        minSdkVersion Math.max(minSdkVersion?.apiLevel ?: 21, 29)
+        minSdkVersion Math.max(minSdkVersion?.apiLevel ?: 21, 24)
     }
 }
 
-ext["minSdkVersion"] = Math.max(ext.find("minSdkVersion")?:21, 29)
+ext["minSdkVersion"] = Math.max(ext.find("minSdkVersion")?:21, 24)

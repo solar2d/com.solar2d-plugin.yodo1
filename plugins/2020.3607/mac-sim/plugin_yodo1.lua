@@ -29,6 +29,10 @@ function lib.showRewardedVideo()
     showWarning("yodo1.showRewardedVideo()")
 end
 
+function lib.showAppOpen()
+    showWarning("yodo1.showAppOpen()")
+end
+
 function lib.hideBanner()
     showWarning("yodo1.hideBanner()")
 end
@@ -39,6 +43,10 @@ end
 
 function lib.isInterstitialLoaded()
     showWarning("yodo1.isInterstitialLoaded()")
+end
+
+function lib.isAppOpenLoaded()
+    showWarning("yodo1.isAppOpenLoaded()")
 end
 
 function lib.setBannerAlign()

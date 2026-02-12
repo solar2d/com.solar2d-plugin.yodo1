@@ -15,6 +15,7 @@ settings =
 {
     android =
     {
+        minSdkVersion = "24",
         applicationChildElements =
         {
             [[
@@ -33,7 +34,8 @@ settings =
 ## Docs
 
 ```
-    Yodo1 MAS plugin 4.7.7
+    Yodo1 MAS plugin 4.17.1
+    Android requirements: minSdkVersion 24, targetSdkVersion 34, compileSdkVersion 34
 
     appKey = "your_appKey" (required)
         Must match the appKey for this app in your Yodo1 account
@@ -70,17 +72,17 @@ settings =
 ```lua
 local yodo1 = require 'plugin.yodo1'
 
-local function Yodo1Listener(event) { -- event.name = "yodo1"
+local function Yodo1Listener(event) -- event.name = "yodo1"
     print("Yodo Event", event.type, event.phase, event.isError and event.errorType)
-}
+end
 
 yodo1.init(Yodo1Listener, {
-    appKey = "YourYodo1AppKey",
-    gdprConsent = false,
+    appKey = "yourappkey",
+    gdprConsent = true,
     ccpaConsent = false,
     coppaConsent = false,
     adaptiveBannerEnabled = true,
-    privacyDialogEnabled = true
+    privacyDialogEnabled = false
 })
 
 yodo1.showBanner()
@@ -88,11 +90,13 @@ yodo1.hideBanner()
 -- this method accepts any number of arguments. Leave only those which make sense
 yodo1.setBannerAlign("left", "horizontalCenter", "right", "top", "verticalCenter", "bottom")
 
-yodo1.showInterstitial()
-yodo1.showRewardedVideo()
+yodo1.showInterstitial("YourPlacementId")
+yodo1.showRewardedVideo("YourPlacementId")
+yodo1.showAppOpen("YourPlacementId")
 
 yodo1.isRewardedVideoLoaded() -- returns boolean
 yodo1.isInterstitialLoaded() -- returns boolean
+yodo1.isAppOpenLoaded() -- returns boolean
 
 ```
 
@@ -101,22 +105,40 @@ yodo1.isInterstitialLoaded() -- returns boolean
 | Function                | Type              | Phases                               |
 | ----------------------- | ----------------- | -------------------------------------|
 | `init()`                | `init`            | `success`,`error`                    |
-| `showBanner()`          | `banner`          | `opened`, `closed`, `error`          |
-| `showInterstitial()`    | `interstitial`    | `opened`, `closed`, `error`          |
-| `showRewardedVideo()`   | `reward`          | `opened`, `closed`, `error`,`earned` |
+| `showBanner()`          | `banner`          | `loaded`, `failedToLoad`, `opened`, `failedToOpen`, `closed` |
+| `showInterstitial()`    | `interstitial`    | `loaded`, `failedToLoad`, `opened`, `failedToOpen`, `closed` |
+| `showRewardedVideo()`   | `reward`          | `loaded`, `failedToLoad`, `opened`, `failedToOpen`, `closed`, `earned` |
+| `showAppOpen()`         | `appOpen`         | `loaded`, `failedToLoad`, `opened`, `failedToOpen`, `closed` |
+| `*`                     | `banner`, `interstitial`, `reward`, `appOpen` | `revenue` |
 
-Events with phase `"error"` have `isError` set to `true` and `errorType` to the error string.
+Events with phase "failedToLoad" or "failedToOpen" have `isError` set to `true` and `errorType` to the error string.
+`showInterstitial()`, `showRewardedVideo()`, and `showAppOpen()` require a placement ID string.
+Revenue events use `phase = "revenue"` and include `revenue` (number), `currency` (string), and `revenuePrecision` (string).
 
 
 ## Updating this plugin
 
 To future maintainers of this plugin:
 
-* update the version of Yodo1MAS API in these files:
+* update the version of Yodo1 MAS API in these files:
   * `README.md`
   * `plugins/2020.3607/android/corona.gradle`
-  * `src/Corona/main.lua`
   * `src/android/plugin/build.gradle`
 * make code changes in `src/android/plugin/src/main/java/plugin/yodo1/LuaLoader.java` to support the updated API
-* after making code changes, run `gradle assemble` and then manually copy the compiled AAR into the plugin directory:
-  * `cp src/android/plugin/build/outputs/aar/plugin-release.aar plugins/2020.3607/android/yodo1.aar`
+* build the AAR:
+  ```bash
+  cd src/android
+  export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+  ./gradlew :plugin:assembleRelease
+  ```
+* copy the compiled AAR into the plugin directory:
+  ```bash
+  cp src/android/plugin/build/outputs/aar/plugin-release.aar plugins/2020.3607/android/yodo1.aar
+  ```
+
+## Publishing to Solar2D Plugin Directory
+
+1. Commit and push all changes to GitHub
+2. Submit plugin to [Solar2D Free Plugin Directory](https://plugins.solar2d.com/) or [Solar2D Plugins Marketplace](https://www.solar2dplugins.com/)
+3. For the free directory, submit a PR to the [Solar2D plugins repository](https://github.com/solar2d/com.solar2d-plugins) with the updated `plugins/2020.3607/android/` folder contents (`corona.gradle`, `metadata.lua`, `yodo1.aar`)
+4. For self-hosting, package the android folder as `android.tgz` and host it on your server (see [Solar2D Native docs](https://docs.coronalabs.com/native/android/index.html#building-for-self-hosted-plugins))

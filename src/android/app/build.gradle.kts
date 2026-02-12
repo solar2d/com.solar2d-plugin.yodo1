@@ -1,10 +1,10 @@
 import com.android.ide.common.util.toPathString
-import com.beust.klaxon.JsonArray
-import com.beust.klaxon.JsonObject
-import com.beust.klaxon.Klaxon
-import com.beust.klaxon.Parser
-import com.beust.klaxon.lookup
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import java.io.ByteArrayOutputStream
+import kotlin.math.max
 import org.apache.tools.ant.filters.StringInputStream
 
 plugins {
@@ -51,6 +51,57 @@ val nativeDir = if (windows) {
 val coronaPlugins = file("$buildDir/corona-plugins")
 val luaCmd = "$nativeDir/Corona/$shortOsName/bin/lua"
 val isSimulatorBuild = coronaTmpDir != null
+val gson = Gson()
+
+fun parseJsonObject(json: String): JsonObject? {
+    return runCatching { JsonParser.parseString(json).asJsonObject }.getOrNull()
+}
+
+fun getJsonPath(root: JsonObject, path: String): JsonElement? {
+    var current: JsonElement = root
+    for (segment in path.split(".")) {
+        if (!current.isJsonObject) {
+            return null
+        }
+        val obj = current.asJsonObject
+        if (!obj.has(segment)) {
+            return null
+        }
+        current = obj.get(segment)
+    }
+    return current
+}
+
+fun jsonString(value: JsonElement?): String? {
+    if (value == null || value.isJsonNull) {
+        return null
+    }
+    return if (value.isJsonPrimitive) {
+        value.asJsonPrimitive.asString
+    } else {
+        value.toString()
+    }
+}
+
+fun jsonBoolean(value: JsonElement?, defaultValue: Boolean? = null): Boolean? {
+    if (value == null || value.isJsonNull) {
+        return defaultValue
+    }
+    return if (value.isJsonPrimitive) {
+        value.asJsonPrimitive.asBoolean
+    } else {
+        defaultValue
+    }
+}
+
+fun jsonStringList(value: JsonElement?): List<String> {
+    if (value == null || !value.isJsonArray) {
+        return emptyList()
+    }
+    return value.asJsonArray.mapNotNull { element ->
+        if (element.isJsonPrimitive) element.asString else null
+    }
+}
 
 fun checkCoronaNativeInstallation() {
     if (file("$nativeDir/Corona/android/resource/android-template.zip").exists())
@@ -87,13 +138,19 @@ val generatedMainIconsAndBannersDir = "$buildDir/generated/corona_icons"
 val parsedBuildProperties: JsonObject = run {
     coronaTmpDir?.let { srcDir ->
         file("$srcDir/build.properties").takeIf { it.exists() }?.let { f ->
-            return@run Parser.default().parse(f.absolutePath) as JsonObject
+            parseJsonObject(f.readText())?.let { parsed ->
+                return@run parsed
+            }
         }
     }
 
     val buildSettingsFile = file("$coronaSrcDir/build.settings")
     if (!buildSettingsFile.exists()) {
-        return@run JsonObject(mapOf("buildSettings" to JsonObject(), "packageName" to coronaAppPackage, "targetedAppStore" to coronaTargetStore))
+        val root = JsonObject()
+        root.add("buildSettings", JsonObject())
+        root.addProperty("packageName", coronaAppPackage)
+        root.addProperty("targetedAppStore", coronaTargetStore)
+        return@run root
     }
 
     val output = ByteArrayOutputStream()
@@ -119,12 +176,17 @@ val parsedBuildProperties: JsonObject = run {
     if (execResult.exitValue != 0) {
         throw InvalidUserDataException("Build.settings file could not be parsed: ${output.toString().replace(luaCmd, "")}")
     }
-    val parsedBuildSettingsFile = Parser.default().parse(StringBuilder(output.toString())) as? JsonObject
-    return@run JsonObject(mapOf("buildSettings" to parsedBuildSettingsFile, "packageName" to coronaAppPackage, "targetedAppStore" to coronaTargetStore))
+    val parsedBuildSettingsFile = parseJsonObject(output.toString()) ?: JsonObject()
+    val root = JsonObject()
+    root.add("buildSettings", parsedBuildSettingsFile)
+    root.addProperty("packageName", coronaAppPackage)
+    root.addProperty("targetedAppStore", coronaTargetStore)
+    return@run root
 }
 
-val coronaMinSdkVersion = parsedBuildProperties.lookup<Any?>("buildSettings.android.minSdkVersion").firstOrNull()?.toString()?.toIntOrNull()
+val coronaMinSdkVersion = jsonString(getJsonPath(parsedBuildProperties, "buildSettings.android.minSdkVersion"))?.toIntOrNull()
         ?: 19
+val effectiveMinSdkVersion = max(coronaMinSdkVersion, 24)
 
 val coronaBuilder = if (windows) {
     "$nativeDir/Corona/win/bin/CoronaBuilder.exe"
@@ -134,11 +196,11 @@ val coronaBuilder = if (windows) {
 
 
 val coronaVersionName =
-        parsedBuildProperties.lookup<Any?>("buildSettings.android.versionName").firstOrNull()?.toString()
+    jsonString(getJsonPath(parsedBuildProperties, "buildSettings.android.versionName"))
                 ?: project.findProperty("coronaVersionName") as? String ?: "1.0"
 
 val coronaVersionCode: Int =
-        parsedBuildProperties.lookup<Any?>("buildSettings.android.versionCode").firstOrNull()?.toString()?.toIntOrNull()
+    jsonString(getJsonPath(parsedBuildProperties, "buildSettings.android.versionCode"))?.toIntOrNull()
                 ?: (project.findProperty("coronaVersionCode") as? String)?.toIntOrNull() ?: 1
 
 val androidDestPluginPlatform = if (coronaTargetStore.equals("amazon", ignoreCase = true)) {
@@ -181,11 +243,11 @@ if (configureCoronaPlugins == "YES") {
 //</editor-fold>
 
 android {
-    compileSdkVersion(29)
+    compileSdkVersion(34)
     defaultConfig {
         applicationId = coronaAppPackage
-        targetSdkVersion(29)
-        minSdkVersion(coronaMinSdkVersion)
+        targetSdkVersion(34)
+        minSdkVersion(effectiveMinSdkVersion)
         versionCode = coronaVersionCode
         versionName = coronaVersionName
         multiDexEnabled = true
@@ -229,9 +291,11 @@ android {
     mainSourceSet.res.srcDir(generatedMainIconsAndBannersDir)
     mainSourceSet.assets.srcDir(generatedPluginAssetsDir)
     file("$generatedPluginsOutput/resourceDirectories.json").takeIf { it.exists() }?.let {
-        val resourceDirs: List<String>? = Klaxon().parseArray(it)
-        resourceDirs?.forEach { res ->
-            mainSourceSet.res.srcDir(res)
+        val resourceDirs = runCatching { JsonParser.parseString(it.readText()).asJsonArray }.getOrNull()
+        resourceDirs?.forEach { element ->
+            if (element.isJsonPrimitive) {
+                mainSourceSet.res.srcDir(element.asString)
+            }
         }
     }
     val extraPackages = mutableListOf(coronaAppPackage)
@@ -331,11 +395,11 @@ fun coronaAssetsCopySpec(spec: CopySpec) {
         }
         if (!isSimulatorBuild) {
             // use build.settings properties only if this is not simulator build
-            parsedBuildProperties.lookup<JsonArray<String>>("buildSettings.excludeFiles.all").firstOrNull()?.forEach {
-                exclude("**/$it")
+            jsonStringList(getJsonPath(parsedBuildProperties, "buildSettings.excludeFiles.all")).forEach { filePath ->
+                exclude("**/$filePath")
             }
-            parsedBuildProperties.lookup<JsonArray<String>>("buildSettings.excludeFiles.android").firstOrNull()?.forEach {
-                exclude("**/$it")
+            jsonStringList(getJsonPath(parsedBuildProperties, "buildSettings.excludeFiles.android")).forEach { filePath ->
+                exclude("**/$filePath")
             }
         }
         exclude("**/Icon\r")
@@ -500,23 +564,27 @@ fun downloadAndProcessCoronaPlugins(reDownloadPlugins: Boolean = true) {
         file(coronaPlugins).mkdirs()
 
         val buildDataStr = coronaBuildData?.let { file(it).readText() } ?: run {
-            val fakeBuildData = (parsedBuildProperties.obj("buildSettings") ?: JsonObject())
-            fakeBuildData["targetAppStore"] = coronaTargetStore
-            fakeBuildData["dailyBuildYear"] = dailyBuildYear
-            fakeBuildData["dailyBuildRevision"] = dailyBuildRevision
-            fakeBuildData["appName"] = coronaAppFileName ?: "Corona App"
-            fakeBuildData.toJsonString()
+            val baseSettings = getJsonPath(parsedBuildProperties, "buildSettings")?.asJsonObject ?: JsonObject()
+            val fakeBuildData = JsonObject()
+            baseSettings.entrySet().forEach { entry ->
+                fakeBuildData.add(entry.key, entry.value)
+            }
+            fakeBuildData.addProperty("targetAppStore", coronaTargetStore)
+            fakeBuildData.addProperty("dailyBuildYear", dailyBuildYear)
+            fakeBuildData.addProperty("dailyBuildRevision", dailyBuildRevision)
+            fakeBuildData.addProperty("appName", coronaAppFileName ?: "Corona App")
+            gson.toJson(fakeBuildData)
         }
-        val buildParams = JsonObject(mapOf(
-                "appName" to coronaAppFileName,
-                "appPackage" to coronaAppPackage,
-                "build" to dailyBuildRevision,
-                "buildData" to buildDataStr,
-                "modernPlatform" to "android",
-                "platform" to "android",
-                "pluginPlatform" to androidDestPluginPlatform,
-                "destinationDirectory" to coronaPlugins.absolutePath
-        )).toJsonString()
+        val buildParamsObject = JsonObject()
+        buildParamsObject.addProperty("appName", coronaAppFileName)
+        buildParamsObject.addProperty("appPackage", coronaAppPackage)
+        buildParamsObject.addProperty("build", dailyBuildRevision)
+        buildParamsObject.addProperty("buildData", buildDataStr)
+        buildParamsObject.addProperty("modernPlatform", "android")
+        buildParamsObject.addProperty("platform", "android")
+        buildParamsObject.addProperty("pluginPlatform", androidDestPluginPlatform)
+        buildParamsObject.addProperty("destinationDirectory", coronaPlugins.absolutePath)
+        val buildParams = gson.toJson(buildParamsObject)
         val builderInput = file("$buildDir/tmp/builderInput.json")
         builderInput.parentFile.mkdirs()
         builderInput.writeText(buildParams)
@@ -598,7 +666,7 @@ fun downloadAndProcessCoronaPlugins(reDownloadPlugins: Boolean = true) {
         val resDirectories = resourceDirectories.map { File(it, "res") }
                 .filter { it.exists() && it.isDirectory }
                 .map { it.absolutePath }
-        file("$generatedPluginsOutput/resourceDirectories.json").writeText(JsonArray(resDirectories).toJsonString())
+        file("$generatedPluginsOutput/resourceDirectories.json").writeText(gson.toJson(resDirectories))
 
         val extraPackages = resourceDirectories.map {
             val packageFile = File(it, "package.txt")
@@ -641,7 +709,7 @@ fun downloadAndProcessCoronaPlugins(reDownloadPlugins: Boolean = true) {
             buildPropsFile
         } else {
             val buildPropsOut = file("$buildDir/intermediates/corona.build.props")
-            buildPropsOut.writeText(parsedBuildProperties.toJsonString())
+            buildPropsOut.writeText(gson.toJson(parsedBuildProperties))
             buildPropsOut
         }
 
@@ -1022,11 +1090,11 @@ tasks.create<Copy>("copySplashScreen") {
     copyCoronaIconFiles.dependsOn(this)
     dependsOn(cleanupIconsDir)
 
-    val enableSplash: Boolean = parsedBuildProperties.lookup<Boolean?>("buildSettings.splashScreen.android.enable").firstOrNull()
-            ?: parsedBuildProperties.lookup<Boolean?>("buildSettings.splashScreen.enable").firstOrNull()
+        val enableSplash: Boolean = jsonBoolean(getJsonPath(parsedBuildProperties, "buildSettings.splashScreen.android.enable"))
+            ?: jsonBoolean(getJsonPath(parsedBuildProperties, "buildSettings.splashScreen.enable"))
             ?: true
-    val image: String? = parsedBuildProperties.lookup<String?>("buildSettings.splashScreen.android.image").firstOrNull()
-            ?: parsedBuildProperties.lookup<String?>("buildSettings.splashScreen.image").firstOrNull()
+        val image: String? = jsonString(getJsonPath(parsedBuildProperties, "buildSettings.splashScreen.android.image"))
+            ?: jsonString(getJsonPath(parsedBuildProperties, "buildSettings.splashScreen.image"))
 
     logger.info("Configured Splash Screen enable: $enableSplash, image: $image.")
     if (enableSplash) {

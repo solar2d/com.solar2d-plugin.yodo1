@@ -1,11 +1,11 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 34
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 31
+        minSdkVersion 24
+        targetSdkVersion 34
         versionCode 3
         versionName "3.0"
     }
@@ -13,6 +13,6 @@ android {
 
 dependencies {
     implementation ':Corona@aar'
-    implementation("com.yodo1.mas:full:4.7.7")
+    implementation("com.yodo1.mas:full:4.17.1")
     implementation("commons-io:commons-io:2.11.0")
 }

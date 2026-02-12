@@ -2,12 +2,12 @@ settings =
 {
     android =
     {
-	minSdkVersion = "21",
+	minSdkVersion = "24",
         applicationChildElements =
         {
             [[
                 <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
-                    android:value="ca-app-pub-5333220833779174~3946742739"/>  -- replace with your app id. See: https://goo.gl/fQ2neu
+                    android:value="ca-app-pub-5333220833779174~1479629287"/>  -- replace with your app id. See: https://goo.gl/fQ2neu
             ]],
         },
     },
