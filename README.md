@@ -1,10 +1,8 @@
 # YODO1 MAS plugin
 
-Version 4 of the Yodo1 API is not backwards compatible with version 3. If you used the old version of this plugin please check all of your methods and events with those listed below.
+Yodo1 support site: https://developers.yodo1.com/docs/sdk/guides/android/integration
 
-Yodo1 support site: https://support.yodo1.com
-
-Note: MAS API version 4.6.0 added Native Ads, however this plugin does not yet support them.  See: https://developers.yodo1.com/knowledge-base/android-native-ads-integration/
+Create Yodo1 MAS Account: https://mas.yodo1.com/register
 
 
 ## Setup `build.settings`
