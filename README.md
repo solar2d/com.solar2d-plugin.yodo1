@@ -65,6 +65,14 @@ settings =
         If you enable the Yodo1 privacy dialog, you can supply your own privacy policy URL
 ```
 
+### Display Cutout (Notch) Handling
+
+On Android P (API 28+) devices with a display cutout (notch), the plugin automatically
+offsets the banner ad into the safe area. When the banner is positioned at the top, a
+`topMargin` equal to the cutout's safe inset is applied. Similarly, a `bottomMargin` is
+applied when positioned at the bottom. This is handled transparently — no changes needed
+in Lua code.
+
 ## Sample app code
 
 ```lua

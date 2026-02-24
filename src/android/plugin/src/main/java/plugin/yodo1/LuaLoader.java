@@ -1,9 +1,12 @@
 package plugin.yodo1;
 
+import android.os.Build;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.DisplayCutout;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 
@@ -735,6 +738,7 @@ public class LuaLoader implements JavaFunction {
         params.width = dpToPx(activity, 320);
         params.height = dpToPx(activity, 50);
         params.gravity = resolveBannerGravity();
+        applyCutoutMargins(params, activity);
         bannerAdView.setLayoutParams(params);
     }
 
@@ -743,6 +747,7 @@ public class LuaLoader implements JavaFunction {
         int height = dpToPx(activity, 50);
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
         params.gravity = resolveBannerGravity();
+        applyCutoutMargins(params, activity);
         return params;
     }
 
@@ -770,6 +775,29 @@ public class LuaLoader implements JavaFunction {
             gravity |= Gravity.BOTTOM;
         }
         return gravity;
+    }
+
+    private void applyCutoutMargins(FrameLayout.LayoutParams params, CoronaActivity activity) {
+        params.topMargin = 0;
+        params.bottomMargin = 0;
+
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowInsets windowInsets = activity.getWindow().getDecorView().getRootView().getRootWindowInsets();
+            if (windowInsets != null) {
+                DisplayCutout displayCutout = windowInsets.getDisplayCutout();
+                if (displayCutout != null && displayCutout.getBoundingRects().size() > 0) {
+                    boolean isTop = (params.gravity & Gravity.TOP) == Gravity.TOP;
+                    boolean isBottom = (params.gravity & Gravity.BOTTOM) == Gravity.BOTTOM;
+
+                    if (isTop) {
+                        params.topMargin = displayCutout.getSafeInsetTop();
+                    }
+                    if (isBottom) {
+                        params.bottomMargin = displayCutout.getSafeInsetBottom();
+                    }
+                }
+            }
+        }
     }
 
     private int dpToPx(CoronaActivity activity, int dp) {
