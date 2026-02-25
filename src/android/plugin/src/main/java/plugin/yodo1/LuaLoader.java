@@ -456,7 +456,12 @@ public class LuaLoader implements JavaFunction {
             }
             bannerAlign = align;
             if (bannerAdView != null) {
-                applyBannerLayoutParams(bannerAdView, activity);
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        applyBannerLayoutParams(bannerAdView, activity);
+                    }
+                });
             }
             return 0;
         }
